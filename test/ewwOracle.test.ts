@@ -13,12 +13,15 @@ describe("Token", () => {
 
   async function addWorld() {
     let { contract, deployer, receiver } = await loadFixture(deployContracts);
+    const [addr1] = await ethers.getSigners();
+
+    const contractBlockchainXy = addr1.address;
     const name = 'myworld';
     const mainNode = 'mainNode1';
     const chainId = 1;
     const id = 1;
-    await contract.add(name, mainNode, chainId);
-    return { contract, deployer, name, mainNode, chainId, id, receiver };
+    await contract.add(name, mainNode, chainId, contractBlockchainXy);
+    return { contract, deployer, name, mainNode, chainId, id, receiver, contractBlockchainXy };
   }
 
   it('should add a new world', async () => {
@@ -32,14 +35,14 @@ describe("Token", () => {
   });
 
   it('should fail add a new world caused by unique name', async () => {
-    const { contract, name } = await addWorld();
-    await expect(contract.add(name, "mainNode", 123))
+    const { contract, name, contractBlockchainXy } = await addWorld();
+    await expect(contract.add(name, "mainNode", 123, contractBlockchainXy))
       .to.be.revertedWith('Name must be unique');
   });
 
   it('should fail add a new world caused by whitelist', async () => {
-    const { contract, receiver } = await addWorld();
-    await expect(contract.connect(receiver).add("reverted", "mainNode", 123))
+    const { contract, receiver, contractBlockchainXy } = await addWorld();
+    await expect(contract.connect(receiver).add("reverted", "mainNode", 123, contractBlockchainXy))
       .to.be.revertedWith('Sender address is not in the whitelist');
   });
 
@@ -64,34 +67,24 @@ describe("Token", () => {
     expect(names[0]).to.eq(name);
   });
 
-  it('should get world version', async () => {
-    const { contract, id } = await addWorld();
-    const version = await contract.version(id);
-
-    expect(version.toNumber()).to.eq(0);
-  });
-
   it('should update a world', async () => {
-    const { contract, deployer, name, id } = await addWorld();
-    const newVersion = 2;
+    const { contract, deployer, name, id, contractBlockchainXy } = await addWorld();
     const newNode = "new-node.io/v1";
     const newChainId = 100;
-    await contract.update(id, newChainId, newVersion, newNode);
+    await contract.update(id, newChainId, newNode, contractBlockchainXy);
 
     const updatedWorld = await contract.getByName(name);
-    const exprectedVersion = await contract.version(id);
     expect(updatedWorld[0].toNumber()).to.eq(id);
     expect(updatedWorld[1]).to.eq(name);
     expect(updatedWorld[3]).to.eq(deployer.address);
     // updates
     expect(updatedWorld[2].toNumber()).to.eq(newChainId);
     expect(updatedWorld[4]).to.eq(newNode);
-    expect(exprectedVersion.toNumber()).to.eq(newVersion);
   });
 
   it('should only allow the owner to update a world', async () => {
-    const { contract, receiver, id } = await addWorld();
-    await expect(contract.connect(receiver).update(id, 2, 2, "change"))
+    const { contract, receiver, id, contractBlockchainXy } = await addWorld();
+    await expect(contract.connect(receiver).update(id, 2, "change", contractBlockchainXy))
       .to.be.revertedWith('Only owner can update world');
   });
 
