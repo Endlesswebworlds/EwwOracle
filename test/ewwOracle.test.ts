@@ -96,4 +96,53 @@ describe("Token", () => {
     expect(updatedWorld[3], receiver.address);
     expect(contract.ownerOf(id), receiver.address);
   });
+
+  // Comment in for testing
+  // it("should mint a special world", async () => {
+  //   const { contract } = await addWorld();
+  //   const [deployer] = await ethers.getSigners();
+  //   await contract.connect(deployer).addSpecialImgSource("specialSource");
+  //   let worldId;
+
+  //   const sevenDays = 7 * 24 * 60 * 60;
+
+  //   // Keep adding worlds until a special world is minted
+  //   let hasSpecialWorld = false;
+  //   let i = 0;
+  //   while (!hasSpecialWorld) {
+  //     await contract.add("world" + i, "mainNode", i, contract.address);
+  //     const specialWorldCount = await contract.specialWorldsCount();
+  //     console.log("generated: ", specialWorldCount);
+  //     worldId = i;
+  //     hasSpecialWorld = specialWorldCount.toNumber() > 0;
+  //     await ethers.provider.send('evm_increaseTime', [sevenDays]);
+  //     await ethers.provider.send('evm_mine', []);
+  //     i++;
+  //   }
+
+  //   // Check that the world that was minted is special
+  //   expect(await contract.tokenURI(worldId ?? 1), "specialSource");
+  // });
+
+  it('should return the correct token URI', async () => {
+    const { contract, id } = await addWorld();
+    const tokenURI = await contract.tokenURI(id);
+    expect(tokenURI).to.eq(`https://ipfs.io/${await contract.generalImgSource()}`);
+  });
+
+  it('should add an address to the whitelist', async () => {
+    let { contract, receiver } = await loadFixture(deployContracts);
+    expect(await contract.whitelist(receiver.address)).to.be.false;
+    await contract.addToWhitelist(receiver.address);
+    expect(await contract.whitelist(receiver.address)).to.be.true;
+  });
+
+  it('should fail add an address to the whitelist caused by Address is already in the whitelist', async () => {
+    let { contract, receiver } = await loadFixture(deployContracts);
+    await contract.addToWhitelist(receiver.address);
+
+    await expect(contract.addToWhitelist(receiver.address))
+      .to.be.revertedWith('Address is already in the whitelist');
+  });
+
 });
