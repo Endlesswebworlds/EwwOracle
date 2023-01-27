@@ -20,7 +20,7 @@ describe("Token", () => {
     const mainNode = 'mainNode1';
     const chainId = 1;
     const id = 1;
-    await contract.add(name, mainNode, chainId, contractBlockchainXy);
+    await contract.addWorld(name, mainNode, chainId, contractBlockchainXy);
     return { contract, deployer, name, mainNode, chainId, id, receiver, contractBlockchainXy };
   }
 
@@ -36,13 +36,13 @@ describe("Token", () => {
 
   it('should fail add a new world caused by unique name', async () => {
     const { contract, name, contractBlockchainXy } = await addWorld();
-    await expect(contract.add(name, "mainNode", 123, contractBlockchainXy))
+    await expect(contract.addWorld(name, "mainNode", 123, contractBlockchainXy))
       .to.be.revertedWith('Name must be unique');
   });
 
   it('should fail add a new world caused by whitelist', async () => {
     const { contract, receiver, contractBlockchainXy } = await addWorld();
-    await expect(contract.connect(receiver).add("reverted", "mainNode", 123, contractBlockchainXy))
+    await expect(contract.connect(receiver).addWorld("reverted", "mainNode", 123, contractBlockchainXy))
       .to.be.revertedWith('Sender address is not in the whitelist');
   });
 
@@ -97,37 +97,70 @@ describe("Token", () => {
     expect(contract.ownerOf(id), receiver.address);
   });
 
-  // Comment in for testing
+
+  it('should add a new special image source', async () => {
+    const { contract, deployer } = await deployContracts();
+    const url = "https://images.example.com/special";
+
+    await contract.addSpecialImgSource(url);
+
+    const sources = await contract.specialImgSources(1);
+    expect(sources).to.eq(url);
+  });
+
+
+  // // Comment in for testing
   // it("should mint a special world", async () => {
   //   const { contract } = await addWorld();
   //   const [deployer] = await ethers.getSigners();
-  //   await contract.connect(deployer).addSpecialImgSource("specialSource");
-  //   let worldId;
+  //   await (await contract.connect(deployer).addSpecialImgSource("specialSource")).wait();
 
-  //   const sevenDays = 7 * 24 * 60 * 60;
+  //   const source = await contract.specialImgSources(1);
+  //   console.log("source: ", source);
+
+  //   const baseSource = await contract.providerSource();
+  //   let worldId = 1;
 
   //   // Keep adding worlds until a special world is minted
   //   let hasSpecialWorld = false;
-  //   let i = 0;
-  //   while (!hasSpecialWorld) {
-  //     await contract.add("world" + i, "mainNode", i, contract.address);
+  //   let hasSpecialWorldSpecific = false;
+  //   let i = 2;
+  //   while (!hasSpecialWorldSpecific) {
+  //     await contract.addWorld("world" + i, "mainNode", 1, contract.address);
   //     const specialWorldCount = await contract.specialWorldsCount();
-  //     console.log("generated: ", specialWorldCount);
+  //     console.log("generated: ", i, specialWorldCount.toNumber());
   //     worldId = i;
   //     hasSpecialWorld = specialWorldCount.toNumber() > 0;
-  //     await ethers.provider.send('evm_increaseTime', [sevenDays]);
-  //     await ethers.provider.send('evm_mine', []);
+
+
+  //     if (hasSpecialWorld) {
+  //       const uri = await contract.tokenURI(worldId);
+  //       console.log("sourc 1: ", uri)
+
+  //       hasSpecialWorldSpecific = uri.toString() == baseSource + "specialSource";
+  //     }
+
   //     i++;
   //   }
 
   //   // Check that the world that was minted is special
-  //   expect(await contract.tokenURI(worldId ?? 1), "specialSource");
+  //   expect(await contract.tokenURI(worldId)).to.be.equal(baseSource + "specialSource");
   // });
 
-  it('should return the correct token URI', async () => {
+  it('should check raffle', async () => {
     const { contract, id } = await addWorld();
-    const tokenURI = await contract.tokenURI(id);
-    expect(tokenURI).to.eq(`https://ipfs.io/${await contract.generalImgSource()}`);
+    const img = await contract.tokenURI(id ?? 1);
+    const baseSource = await contract.providerSource();
+    const source = await contract.imgSources(1);
+
+    expect(baseSource + source).to.be.equals(img);
+  });
+
+  it('should change world sourceImg of 1', async () => {
+    const { contract } = await addWorld();
+    contract.changeWorldSourceImg("test", 1)
+    expect(await contract.imgSources(1), "test");
+    expect(await contract.imgSources(2)).not.to.equal("test");
   });
 
   it('should add an address to the whitelist', async () => {

@@ -21,52 +21,54 @@ contract EwwOracle is ERC721, Ownable {
     uint256 public specialImgSourcesCount = 0;
     uint256 public specialWorldsCount = 0;
     mapping(uint256 => string) public specialImgSources; // all special image sources
-    mapping(uint256 => string) public specialImgSourceOfWorld; // worldId => ipfs special source for rare worlds
+    mapping(uint256 => string) public imgSources;
+    mapping(uint256 => string) public imgOfWorld;
     event SpecialWorldMinted(uint256 worldId, string imgSource);
 
     uint256 public worldCount = 0;
-    string public ipfsProviderSource = "https://ipfs.io/";
-    string public generalImgSource = "bafybeigwkm3sisrrdwkjvokfqzboyqu6bqnowlk2mxkby3aa7fh7nyx32i"; // Basic world ipfs hash img
+    string public providerSource = "https://ipfs.io/";
     uint256 private _maxNameLength = 100;
 
     constructor() ERC721("EndlessWebWorld", "EWWorld") {
         whitelist[msg.sender] = true;
+        imgSources[0] = "bafybeie7bhjkuqdrpkxdxbrtatxvwu3rpdj4uy263u53wccyodlnwlqdoe";
+        imgSources[1] = "bafybeigv4ex2quyvo4q2e6l2ooyd4kqjobwqzmluplms3w3buafhhsrqyq";
+        imgSources[2] = "bafybeiglme5almhf3m2f3kql7aht2uujzjirpimqjyrh3gyvyppiq7q2pm";
+
+        specialImgSources[0] = "bafybeial2eyapndu2w4bwedsl3xkmt4s2bqqptbtk6noidjubyyikign44";
+        specialImgSourcesCount = 1;
     }
 
     function changeIpfsProvider(string memory _ipfsProviderSource) public payable onlyOwner {
-        ipfsProviderSource = _ipfsProviderSource;
+        providerSource = _ipfsProviderSource;
     }
 
     function addSpecialImgSource(string memory imgSource) public payable onlyOwner {
-        specialImgSourcesCount += 1;
         specialImgSources[specialImgSourcesCount] = imgSource;
+        specialImgSourcesCount += 1;
     }
 
-    function raffleSpecalWorldMint(uint256 worldId) private {
-        if (specialImgSourcesCount == 0) {
-            return;
-        }
+    function changeWorldSourceImg(string memory imgSource, uint256 imgId) public payable onlyOwner {
+        imgSources[imgId] = imgSource;
+    }
 
-        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) % 20000;
+    function raffleWorldMint(uint256 worldId) private {
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) % 10000;
         if (randomNumber == 0) {
             uint256 selectedIndex = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) %
                 specialImgSourcesCount;
 
-            specialImgSourceOfWorld[worldId] = specialImgSources[selectedIndex + 1];
+            imgOfWorld[worldId] = specialImgSources[selectedIndex + 1];
             specialWorldsCount += 1;
             emit SpecialWorldMinted(worldId, specialImgSources[selectedIndex + 1]);
+        } else {
+            uint256 selectedIndex = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty))) % 3;
+            imgOfWorld[worldId] = imgSources[selectedIndex + 1];
         }
     }
 
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        string memory imgSource;
-        if (bytes(specialImgSourceOfWorld[_tokenId]).length != 0) {
-            imgSource = specialImgSourceOfWorld[_tokenId];
-        } else {
-            imgSource = generalImgSource;
-        }
-
-        return string(abi.encodePacked(ipfsProviderSource, imgSource));
+        return string(abi.encodePacked(providerSource, imgOfWorld[_tokenId]));
     }
 
     function addToWhitelist(address _address) public payable onlyOwner {
@@ -91,7 +93,7 @@ contract EwwOracle is ERC721, Ownable {
         world.chainContract = _chainContract;
     }
 
-    function add(
+    function addWorld(
         string memory _name,
         string memory _mainNode,
         uint256 _chainId,
@@ -112,7 +114,7 @@ contract EwwOracle is ERC721, Ownable {
             chainContract: _chainContract
         });
 
-        raffleSpecalWorldMint(worldCount);
+        raffleWorldMint(worldCount);
 
         worldsById[worldCount] = newWorld;
         worldIdsByName[_name] = worldCount;
