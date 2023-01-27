@@ -26,7 +26,7 @@ contract EwwOracle is ERC721, Ownable {
     event SpecialWorldMinted(uint256 worldId, string imgSource);
 
     uint256 public worldCount = 0;
-    string public providerSource = "https://ipfs.io/";
+    string public providerSource = "https://ipfs.io/ipfs/";
     uint256 private _maxNameLength = 100;
 
     constructor() ERC721("EndlessWebWorld", "EWWorld") {
