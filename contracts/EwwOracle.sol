@@ -31,7 +31,7 @@ contract EwwOracle is ERC721, Ownable {
 
     constructor() ERC721("EndlessWebWorld", "EWWorld") {
         whitelist[msg.sender] = true;
-        imgSources[0] = "bafybeie7bhjkuqdrpkxdxbrtatxvwu3rpdj4uy263u53wccyodlnwlqdoe";
+        imgSources[0] = "bafybeiamw4ekqkulpeduylidtwwxcnmrdwge5mvqcb77b2ng7pwilagtvy";
         imgSources[1] = "bafybeigv4ex2quyvo4q2e6l2ooyd4kqjobwqzmluplms3w3buafhhsrqyq";
         imgSources[2] = "bafybeiglme5almhf3m2f3kql7aht2uujzjirpimqjyrh3gyvyppiq7q2pm";
 
